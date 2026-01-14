@@ -1,6 +1,6 @@
 document.addEventListener("DOMContentLoaded", () => {
 
-  /***** 🔥 FIREBASE INIT *****/
+  /*****  FIREBASE INIT *****/
   const firebaseConfig = {
     apiKey: "AIzaSyB3XY6y-r3qR3GOqTdhCrIXeaFkHYah98c",
     authDomain: "roulette-randomiser-lollasquad.firebaseapp.com",
@@ -12,7 +12,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const db = firebase.firestore();
   const lockRef = db.collection("giveaway").doc("lock");
 
-  /***** 🔐 ADMIN AUTH (UI ONLY) *****/
+  /*****  ADMIN AUTH (UI ONLY) *****/
   const adminLoginBtn = document.getElementById("adminLogin");
   const adminResetBtn = document.getElementById("adminReset");
 
@@ -35,7 +35,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
-  /***** 🔁 ADMIN RESET *****/
+  /*****  ADMIN RESET *****/
   adminResetBtn.onclick = async () => {
     if (!confirm("Reset giveaway? This will archive the current winner.")) return;
 
@@ -55,7 +55,7 @@ document.addEventListener("DOMContentLoaded", () => {
     location.reload();
   };
 
-  /***** 🎡 CANVAS SETUP *****/
+  /*****  CANVAS SETUP *****/
   const canvas = document.getElementById("wheel");
   const ctx = canvas.getContext("2d");
   const spinBtn = document.getElementById("spinBtn");
@@ -65,7 +65,7 @@ document.addEventListener("DOMContentLoaded", () => {
   let weightedPool = [];
   let angle = 0;
 
-  /***** 📥 LOAD CSV *****/
+  /*****  LOAD CSV *****/
   fetch("data.csv")
     .then(res => res.text())
     .then(text => {
@@ -87,7 +87,7 @@ document.addEventListener("DOMContentLoaded", () => {
       checkLock();
     });
 
-  /***** 🔒 CHECK LOCK *****/
+  /***** CHECK LOCK *****/
   function checkLock() {
     lockRef.get().then(doc => {
       if (doc.exists) {
@@ -100,7 +100,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  /***** 🎨 DRAW WHEEL *****/
+  /*****  DRAW WHEEL *****/
   function drawWheel() {
     const slice = (2 * Math.PI) / users.length;
 
@@ -125,7 +125,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  /***** 🎯 SPIN *****/
+  /*****  SPIN *****/
   spinBtn.onclick = async () => {
     const snap = await lockRef.get();
     if (snap.exists) return;
@@ -150,7 +150,7 @@ document.addEventListener("DOMContentLoaded", () => {
     animateSpin(target, winner, seed);
   };
 
-  /***** 🌀 ANIMATION *****/
+  /*****  ANIMATION *****/
   function animateSpin(target, winner, seed) {
     let start = angle;
     let startTime = null;
