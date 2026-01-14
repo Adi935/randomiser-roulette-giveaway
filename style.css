@@ -10,6 +10,11 @@ body {
   text-align: center;
 }
 
+.logo {
+  transform: scale(2.0); 
+}
+
+
 /* ===== HEADER ===== */
 .top-bar {
   padding: 30px 20px 10px;
