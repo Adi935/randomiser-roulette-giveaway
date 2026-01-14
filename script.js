@@ -62,7 +62,7 @@ let weightedPool = [];
 let angle = 0;
 
 /***** 📥 LOAD CSV DATA *****/
-fetch("./data.csv")
+fetch("data.csv")
   .then(res => res.text())
   .then(text => {
     const rows = text.trim().split("\n").slice(1);
