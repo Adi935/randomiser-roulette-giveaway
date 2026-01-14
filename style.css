@@ -94,3 +94,33 @@ button:disabled {
   font-weight: bold;
   color: #00ffcc;
 }
+
+.odds-legend {
+  margin-top: 20px;
+  padding: 16px;
+  background: rgba(255,255,255,0.04);
+  border-radius: 12px;
+  max-width: 420px;
+  color: #ddd;
+  font-size: 14px;
+}
+
+.odds-legend h3 {
+  margin-bottom: 8px;
+  color: #fff;
+}
+
+.odds-legend ul {
+  padding-left: 18px;
+}
+
+.odds-legend li {
+  margin: 6px 0;
+}
+
+.odds-legend .note,
+.odds-legend .example {
+  margin-top: 10px;
+  font-size: 13px;
+  color: #aaa;
+}
