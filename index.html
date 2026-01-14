@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>LollaSquad Lollapalooza Tickets Giveaway</title>
+  <link rel="stylesheet" href="style.css" />
+
+  <!-- Firebase SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+
+</head>
+<body>
+
+<!-- ===== HEADER ===== -->
+<header class="top-bar">
+  <div class="logos">
+    <img src="logos/lollasquad.jpg" alt="LollaSquad" />
+    <img src="logos/concertsxindia.jpg" alt="ConcertsXIndia" />
+  </div>
+
+  <h1>
+    🎡 LollaSquad <span>Lollapalooza</span><br>
+    Tickets Giveaway
+  </h1>
+
+  <p class="tagline">
+    Transparent • Weighted • Fair
+  </p>
+</header>
+
+<!-- ===== MAIN CONTENT ===== -->
+<main>
+  <div class="wheel-container">
+    <div id="pointer">▼</div>
+    <canvas id="wheel" width="500" height="500"></canvas>
+  </div>
+
+  <button id="spinBtn">SPIN 🎶</button>
+
+  <div class="legend">
+    <strong>Odds Legend</strong><br>
+    🎟️ 10 points → 1× chance<br>
+    🎯 20 points → 2× chance
+  </div>
+
+  <div id="result" class="result"></div>
+</main>
+
+<script src="script.js"></script>
+
+<button id="adminLogin">Admin Login</button>
+<button id="adminReset" style="display:none;">Reset Giveaway</button>
+
+
+</body>
+</html>

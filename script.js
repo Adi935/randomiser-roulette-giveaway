@@ -1,41 +1,217 @@
-let weightedPool = [];
-let displayNames = [];
+/***** 🔥 FIREBASE INIT *****/
+const firebaseConfig = {
+  apiKey: "AIzaSyB3XY6y-r3qR3GOqTdhCrIXeaFkHYah98c",
+  authDomain: "roulette-randomiser-lollasquad.firebaseapp.com",
+  projectId: "roulette-randomiser-lollasquad"
+};
 
-// Load CSV
-fetch("data.csv")
+firebase.initializeApp(firebaseConfig);
+
+const db = firebase.firestore();
+const lockRef = db.collection("giveaway").doc("lock");
+
+/***** 🔐 ADMIN AUTH (UI ONLY) *****/
+const adminLoginBtn = document.getElementById("adminLogin");
+const adminResetBtn = document.getElementById("adminReset");
+
+adminLoginBtn.onclick = () => {
+  firebase.auth().signInWithPopup(
+    new firebase.auth.GoogleAuthProvider()
+  );
+};
+
+firebase.auth().onAuthStateChanged(user => {
+  if (user) {
+    adminResetBtn.style.display = "inline-block";
+  } else {
+    adminResetBtn.style.display = "none";
+  }
+});
+
+/***** 🔁 ADMIN RESET (RULES ENFORCE AUTH) *****/
+adminResetBtn.onclick = async () => {
+  if (!confirm("Reset giveaway? This will archive the current winner.")) return;
+
+  const snap = await lockRef.get();
+  if (!snap.exists) return;
+
+  const data = snap.data();
+
+  // Archive previous winner
+  await db.collection("giveaway")
+    .collection("history")
+    .add({
+      ...data,
+      resetAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+
+  // Remove active lock
+  await lockRef.delete();
+
+  location.reload();
+};
+
+/***** 🎡 CANVAS SETUP *****/
+const canvas = document.getElementById("wheel");
+const ctx = canvas.getContext("2d");
+const spinBtn = document.getElementById("spinBtn");
+const resultDiv = document.getElementById("result");
+
+let users = [];
+let weightedPool = [];
+let angle = 0;
+
+/***** 📥 LOAD CSV DATA *****/
+fetch("./data.csv")
   .then(res => res.text())
   .then(text => {
     const rows = text.trim().split("\n").slice(1);
+
     rows.forEach(row => {
       const [name, points] = row.split(",");
-      const weight = points === "20" ? 2 : 1;
+      users.push(name);
 
-      // For probability
+      const weight = Number(points) === 20 ? 2 : 1;
       for (let i = 0; i < weight; i++) {
         weightedPool.push(name);
       }
-
-      displayNames.push(name);
     });
 
-    document.getElementById("roulette").innerText =
-      displayNames.join("  |  ");
+    drawWheel();
+    checkLock();
   });
 
-document.getElementById("spinBtn").onclick = () => {
-  const roulette = document.getElementById("roulette");
+/***** 🔒 CHECK GLOBAL LOCK *****/
+function checkLock() {
+  lockRef.get().then(doc => {
+    if (doc.exists) {
+      const data = doc.data();
+      spinBtn.disabled = true;
+      resultDiv.innerHTML =
+        `🏆 WINNER (LOCKED): <strong>${data.winner}</strong><br>
+         🔑 Seed: ${data.seed}`;
+    }
+  });
+}
 
-  // Pick winner (TRUE weighted randomness)
-  const winner =
-    weightedPool[Math.floor(Math.random() * weightedPool.length)];
+/***** 🎨 DRAW WHEEL *****/
+function drawWheel() {
+  const slice = (2 * Math.PI) / users.length;
 
-  // Animation
-  roulette.style.transition = "transform 4s ease-out";
-  roulette.style.transform = `translateX(-${Math.random() * 800}px)`;
+  users.forEach((user, i) => {
+    const start = i * slice;
+    const end = start + slice;
 
-  setTimeout(() => {
-    roulette.style.transition = "none";
-    roulette.style.transform = "translateX(0)";
-    roulette.innerText = `🏆 WINNER: ${winner}`;
-  }, 4000);
+    ctx.beginPath();
+    ctx.moveTo(250, 250);
+    ctx.arc(250, 250, 250, start, end);
+    ctx.fillStyle = i % 2 ? "#ff0055" : "#222";
+    ctx.fill();
+
+    ctx.save();
+    ctx.translate(250, 250);
+    ctx.rotate(start + slice / 2);
+    ctx.textAlign = "right";
+    ctx.fillStyle = "white";
+    ctx.font = "13px Arial";
+    ctx.fillText(user, 230, 5);
+    ctx.restore();
+  });
+}
+
+/***** 🎯 SPIN (WEIGHTED + SEEDED) *****/
+spinBtn.onclick = async () => {
+  const snap = await lockRef.get();
+  if (snap.exists) return;
+
+  const seed = Date.now();
+  const randIndex =
+    Math.floor(seededRandom(seed) * weightedPool.length);
+
+  const winner = weightedPool[randIndex];
+
+  try {
+    await lockRef.set({
+      winner,
+      seed,
+      timestamp: firebase.firestore.FieldValue.serverTimestamp()
+    });
+
+    const index = users.indexOf(winner);
+    const slice = (2 * Math.PI) / users.length;
+    const target =
+      (3 * Math.PI) / 2 - (index * slice + slice / 2);
+
+    animateSpin(target, winner, seed);
+
+  } catch {
+    alert("Winner already locked!");
+  }
 };
+
+/***** 🌀 SPIN ANIMATION *****/
+function animateSpin(target, winner, seed) {
+  let start = angle;
+  let startTime = null;
+  const duration = 5000;
+
+  function frame(time) {
+    if (!startTime) startTime = time;
+    const progress = Math.min((time - startTime) / duration, 1);
+    angle = start + (target - start) * easeOut(progress);
+
+    ctx.clearRect(0, 0, 500, 500);
+    ctx.save();
+    ctx.translate(250, 250);
+    ctx.rotate(angle);
+    ctx.translate(-250, -250);
+    drawWheel();
+    ctx.restore();
+
+    if (progress < 1) {
+      requestAnimationFrame(frame);
+    } else {
+      confettiBurst();
+      spinBtn.disabled = true;
+      resultDiv.innerHTML =
+        `🏆 WINNER: <strong>${winner}</strong><br>
+         🔑 Seed: ${seed}`;
+    }
+  }
+
+  requestAnimationFrame(frame);
+}
+
+/***** 🔢 SEEDED RNG *****/
+function seededRandom(seed) {
+  let x = Math.sin(seed) * 10000;
+  return x - Math.floor(x);
+}
+
+function easeOut(t) {
+  return 1 - Math.pow(1 - t, 3);
+}
+
+/***** 🎉 CONFETTI *****/
+function confettiBurst() {
+  for (let i = 0; i < 150; i++) {
+    const c = document.createElement("div");
+    c.style.position = "fixed";
+    c.style.left = Math.random() * 100 + "vw";
+    c.style.top = "-10px";
+    c.style.width = "6px";
+    c.style.height = "12px";
+    c.style.background =
+      ["#ff0055", "#00ffcc", "#fff"][Math.floor(Math.random() * 3)];
+    c.style.zIndex = 9999;
+    document.body.appendChild(c);
+
+    c.animate(
+      [{ transform: "translateY(0)" },
+       { transform: `translateY(${window.innerHeight}px)` }],
+      { duration: 2500 + Math.random() * 1000 }
+    );
+
+    setTimeout(() => c.remove(), 3500);
+  }
+}
