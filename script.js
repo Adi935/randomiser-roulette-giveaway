@@ -154,7 +154,7 @@ document.addEventListener("DOMContentLoaded", () => {
   function animateSpin(target, winner, seed) {
     let start = angle;
     let startTime = null;
-    const duration = 5000;
+    const duration = 10000;
 
     function frame(time) {
       if (!startTime) startTime = time;
