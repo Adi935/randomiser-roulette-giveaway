@@ -129,3 +129,17 @@ button:disabled {
   font-size: 13px;
   color: #aaa;
 }
+
+body.spinning #spinBtn {
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+body.spinning #wheel {
+  filter: drop-shadow(0 0 25px #ff0055);
+}
+#spinBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
