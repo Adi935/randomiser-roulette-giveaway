@@ -127,58 +127,85 @@ document.addEventListener("DOMContentLoaded", () => {
 
   /*****  SPIN *****/
   spinBtn.onclick = async () => {
-    const snap = await lockRef.get();
-    if (snap.exists) return;
 
-    const seed = Date.now();
-    const rand =
-      Math.floor(seededRandom(seed) * weightedPool.length);
+  document.body.classList.add("spinning");
+  spinBtn.disabled = true;
 
-    const winner = weightedPool[rand];
+  const snap = await lockRef.get();
+  if (snap.exists) return;
 
-    await lockRef.set({
-      winner,
-      seed,
-      timestamp: firebase.firestore.FieldValue.serverTimestamp()
-    });
+  const seed = Date.now();
+  const rand =
+    Math.floor(seededRandom(seed) * weightedPool.length);
 
-    const index = users.indexOf(winner);
-    const slice = (2 * Math.PI) / users.length;
-    const target =
-      (3 * Math.PI) / 2 - (index * slice + slice / 2);
+  const winner = weightedPool[rand];
 
-    animateSpin(target, winner, seed);
-  };
+  await lockRef.set({
+    winner,
+    seed,
+    timestamp: firebase.firestore.FieldValue.serverTimestamp()
+  });
+
+  const index = users.indexOf(winner);
+  const slice = (2 * Math.PI) / users.length;
+
+  const targetAngle =
+    (3 * Math.PI) / 2 - (index * slice + slice / 2);
+
+  const fullRotations = 8;
+  const finalAngle =
+    targetAngle + fullRotations * 2 * Math.PI;
+
+  animateSpin(finalAngle, winner, seed);
+};
 
   /*****  ANIMATION *****/
-  function animateSpin(target, winner, seed) {
-    let start = angle;
-    let startTime = null;
-    const duration = 30000;
 
-    function frame(time) {
-      if (!startTime) startTime = time;
-      const progress = Math.min((time - startTime) / duration, 1);
-      angle = start + (target - start) * (1 - Math.pow(1 - progress, 3));
+  
+  function animateSpin(finalAngle, winner, seed) {
+  const startAngle = angle;
+  const delta = finalAngle - startAngle;
+  const duration = 6500; // 6.5 seconds (sweet spot)
+  let startTime = null;
 
-      ctx.clearRect(0, 0, 500, 500);
-      ctx.save();
-      ctx.translate(250, 250);
-      ctx.rotate(angle);
-      ctx.translate(-250, -250);
-      drawWheel();
-      ctx.restore();
+  function frame(time) {
+    if (!startTime) startTime = time;
 
-      if (progress < 1) requestAnimationFrame(frame);
-      else {
-        confettiBurst();
-        resultDiv.innerHTML =
-          `🏆 WINNER: <strong>${winner}</strong><br>🔑 Seed: ${seed}`;
-      }
-    }
+    const elapsed = time - startTime;
+    const progress = Math.min(elapsed / duration, 1);
 
-    requestAnimationFrame(frame);
+    // 🔥 Ease-out cubic (fast → slow)
+    const eased = 1 - Math.pow(1 - progress, 3);
+
+    angle = startAngle + delta * eased;
+
+    ctx.clearRect(0, 0, 500, 500);
+    ctx.save();
+    ctx.translate(250, 250);
+    ctx.rotate(angle);
+    ctx.translate(-250, -250);
+    drawWheel();
+    ctx.restore();
+
+    if (progress < 1) {
+      requestAnimationFrame(frame);
+    } else {
+  angle = finalAngle % (2 * Math.PI);
+  confettiBurst();
+
+  angle += Math.sin(progress * 30) * 0.002;
+  document.body.classList.remove("spinning");
+
+  resultDiv.innerHTML =
+    `🏆 WINNER: <strong>${winner}</strong><br>
+     🔑 Seed: ${seed}`;
+}
+
   }
+
+  requestAnimationFrame(frame);
+}
+
 
   function seededRandom(seed) {
     let x = Math.sin(seed) * 10000;
